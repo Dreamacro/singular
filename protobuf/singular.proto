@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message Request {
+  enum Meta {
+    NewProxy = 0;
+    Assign = 1;
+  }
+  Meta meta = 1;
+  string payload = 2;
+}
+
+message Data {
+  bytes requestId = 1;
+  bytes payload = 2;
+}
