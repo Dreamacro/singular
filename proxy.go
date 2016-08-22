@@ -13,6 +13,7 @@ import (
 // Proxy define a Proxy
 type Proxy struct {
 	Sessions
+	Name      string
 	Port      int
 	Listener  net.Listener
 	Alive     bool
@@ -26,7 +27,7 @@ func (proxy *Proxy) Listen() {
 	for {
 		conn, err := proxy.Listener.Accept()
 		if err != nil {
-			log.Errorf("Proxy Leave")
+			log.Errorf("Proxy %s at %s Leave", proxy.Name, proxy.Listener.Addr())
 			break
 		}
 		if proxy.Alive {
@@ -88,13 +89,14 @@ func (proxy *Proxy) handleConnection(conn net.Conn) {
 }
 
 // NewProxy create a new proxy
-func NewProxy(useTLS bool, tlsConfig *tls.Config) *Proxy {
+func NewProxy(name string, useTLS bool, tlsConfig *tls.Config) *Proxy {
 	listen, err := net.Listen("tcp", ":0")
 	CheckError("Listen TCP Error", err)
 
 	addr, err := net.ResolveTCPAddr("tcp", listen.Addr().String())
 
 	return &Proxy{
+		Name:      name,
 		Port:      addr.Port,
 		Listener:  listen,
 		Alive:     false,

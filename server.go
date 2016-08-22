@@ -56,16 +56,23 @@ func (server *Server) handleClient(conn net.Conn) {
 
 	req := &pb.Request{}
 	err = proto.Unmarshal(buf, req)
-	CheckError("Unmarshal Message Error", err)
+	if err != nil {
+		return
+	}
 	if req.Meta == pb.Request_NewProxy {
-		proxy := NewProxy(server.tls, server.tlsConfig)
+		proxy := NewProxy(req.Payload, server.tls, server.tlsConfig)
 
-		req := &pb.Request{
+		remoteHost, _, _ := net.SplitHostPort(connection.RemoteAddr().String())
+		if err != nil {
+			log.Error(err)
+		}
+		log.Infof("Assign Proxy: %s %s from %s", proxy.Name, proxy.Listener.Addr(), remoteHost)
+
+		res := &pb.Request{
 			Meta:    pb.Request_Assign,
 			Payload: fmt.Sprintf("%d", proxy.Port),
 		}
-		log.Infof("Assign Proxy: %s", proxy.Listener.Addr())
-		buf, err := proto.Marshal(req)
+		buf, err := proto.Marshal(res)
 		if err != nil {
 			log.Errorf("buf error: %v", err)
 		}

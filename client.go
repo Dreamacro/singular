@@ -49,7 +49,8 @@ func (client *Client) Connect() error {
 	con := NewConn(conn)
 
 	req := &pb.Request{
-		Meta: pb.Request_NewProxy,
+		Meta:    pb.Request_NewProxy,
+		Payload: client.Name,
 	}
 	buf, _ := proto.Marshal(req)
 	con.Send(buf)
