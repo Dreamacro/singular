@@ -23,7 +23,7 @@ type Proxy struct {
 // Listen proxy listen
 func (proxy *Proxy) Listen() {
 	defer proxy.Close()
-	go proxy.handleProxy(proxy.Sessions.Client)
+	go proxy.handleProxy()
 	for {
 		conn, err := proxy.Listener.Accept()
 		if err != nil {
@@ -33,14 +33,15 @@ func (proxy *Proxy) Listen() {
 	}
 }
 
-func (proxy *Proxy) handleProxy(conn net.Conn) {
+func (proxy *Proxy) handleProxy() {
+	conn := proxy.Sessions.Client
 	if proxy.tls {
-		conn = tls.Server(conn, proxy.tlsConfig)
+		conn = NewConn(tls.Server(conn.Conn, proxy.tlsConfig))
 	}
 	defer proxy.Close()
 
 	for {
-		buf, err := proxy.Client.Receive()
+		buf, err := conn.Receive()
 		if err != nil {
 			break
 		}
