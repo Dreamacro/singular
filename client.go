@@ -67,32 +67,22 @@ func (client *Client) Connect() error {
 		log.WithFields(log.Fields{"err": err, "data": res}).Info("Assign Response Error")
 	}
 
-	conn.Close()
-
 	host, _, err := net.SplitHostPort(client.ServerAddr)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Info("SplitHostPort Error")
 		return err
 	}
 	addr := fmt.Sprintf("%s:%s", host, res.Payload)
-	client.Process(addr)
+
+	client.Process(con, addr)
+
 	return io.EOF
 }
 
 // Process working
-func (client *Client) Process(addr string) {
-	var conn net.Conn
-	var err error
-	if client.tls {
-		conn, err = tls.Dial("tcp", addr, client.tlsConfig)
-	} else {
-		conn, err = net.Dial("tcp", addr)
-	}
-	if err != nil {
-		log.Errorf("fail: %v", err)
-	}
+func (client *Client) Process(conn Conn, addr string) {
 	log.Printf("%s Process: %s", client.Name, addr)
-	client.Sessions = NewSessions(NewConn(conn))
+	client.Sessions = NewSessions(conn)
 
 	defer client.Close()
 

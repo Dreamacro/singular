@@ -60,7 +60,7 @@ func (server *Server) handleClient(conn net.Conn) {
 		return
 	}
 	if req.Meta == pb.Request_NewProxy {
-		proxy := NewProxy(req.Payload, server.tls, server.tlsConfig)
+		proxy := NewProxy(connection, req.Payload, server.tls, server.tlsConfig)
 
 		remoteHost, _, _ := net.SplitHostPort(connection.RemoteAddr().String())
 		if err != nil {

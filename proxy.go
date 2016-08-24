@@ -16,25 +16,20 @@ type Proxy struct {
 	Name      string
 	Port      int
 	Listener  net.Listener
-	Alive     bool
 	tls       bool
 	tlsConfig *tls.Config
 }
 
 // Listen proxy listen
 func (proxy *Proxy) Listen() {
-	defer proxy.Listener.Close()
+	defer proxy.Close()
+	go proxy.handleProxy(proxy.Sessions.Client)
 	for {
 		conn, err := proxy.Listener.Accept()
 		if err != nil {
-			log.Errorf("Proxy %s at %s Leave", proxy.Name, proxy.Listener.Addr())
 			break
 		}
-		if proxy.Alive {
-			go proxy.handleConnection(conn)
-		} else {
-			go proxy.handleProxy(conn)
-		}
+		go proxy.handleConnection(conn)
 	}
 }
 
@@ -42,15 +37,11 @@ func (proxy *Proxy) handleProxy(conn net.Conn) {
 	if proxy.tls {
 		conn = tls.Server(conn, proxy.tlsConfig)
 	}
-	proxy.Alive = true
-	proxy.Sessions = NewSessions(NewConn(conn))
 	defer proxy.Close()
 
 	for {
 		buf, err := proxy.Client.Receive()
 		if err != nil {
-			// log.Info("Disconnect")
-
 			break
 		}
 
@@ -78,6 +69,7 @@ func (proxy *Proxy) Close() {
 		return
 	}
 	proxy.Sessions.Close()
+	log.Errorf("Proxy %s at %s Leave", proxy.Name, proxy.Listener.Addr())
 }
 
 func (proxy *Proxy) handleConnection(conn net.Conn) {
@@ -89,17 +81,21 @@ func (proxy *Proxy) handleConnection(conn net.Conn) {
 }
 
 // NewProxy create a new proxy
-func NewProxy(name string, useTLS bool, tlsConfig *tls.Config) *Proxy {
+func NewProxy(conn Conn, name string, useTLS bool, tlsConfig *tls.Config) *Proxy {
 	listen, err := net.Listen("tcp", ":0")
 	CheckError("Listen TCP Error", err)
 
 	addr, err := net.ResolveTCPAddr("tcp", listen.Addr().String())
 
+	if useTLS {
+		conn = NewConn(tls.Server(conn, tlsConfig))
+	}
+
 	return &Proxy{
+		Sessions:  NewSessions(conn),
 		Name:      name,
 		Port:      addr.Port,
 		Listener:  listen,
-		Alive:     false,
 		tls:       useTLS,
 		tlsConfig: tlsConfig,
 	}
