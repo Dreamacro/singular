@@ -3,7 +3,7 @@
 ## Installation
 
     # compile server and client
-    go get -v github.com/Dreamacro/singular/cmd/singulard
+    go get -v github.com/Dreamacro/singulard/cmd/singulard
     go get -v github.com/Dreamacro/singular/cmd/singular
 
 ## Getting started
